@@ -1,0 +1,160 @@
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import express from 'express';
+import fs from 'fs';
+import https from 'https';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import connectDB from '#config/db.config.js';
+import logger from '#config/logger.config.js';
+import errorHandler from '#middlewares/error.middleware.js';
+import adminBookingRoutes from '#routes/admin.booking.route.js';
+import adminRoutes from '#routes/admin.route.js';
+import authRoutes from '#routes/auth.route.js';
+import bookingRoutes from '#routes/booking.route.js';
+import orderRoutes from '#routes/order.route.js';
+import rackRoutes from '#routes/rack.route.js';
+import tokenPackRoutes from '#routes/token-pack.route.js';
+import uploadRoutes from '#routes/upload.route.js';
+import waitlistRoutes from '#routes/wait-list.route.js';
+import adminTransactionRoutes from './api/routes/admin.transaction.route.js';
+import adminWaitlistRoutes from './api/routes/admin.wait-list.route.js';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const createUploadDirs = () => {
+	const backendRoot = path.resolve(__dirname, '..');
+	const dirs = [
+		path.join(backendRoot, 'uploads'),
+		path.join(backendRoot, 'uploads/topology-diagrams'),
+	];
+
+	dirs.forEach((dir) => {
+		if (!fs.existsSync(dir)) {
+			fs.mkdirSync(dir, { recursive: true });
+			console.log(`Created directory: ${dir}`);
+		}
+	});
+};
+
+const setupSSL = () => {
+	try {
+		const sslPath = path.resolve(__dirname, '..');
+
+		console.log('Loading SSL certificates from:', sslPath);
+
+		const privateKeyPath = path.join(sslPath, 'private_key_unencrypted.txt');
+		const certificatePath = path.join(sslPath, 'certificate.txt');
+		const certificateChainPath = path.join(sslPath, 'certificate_chain.txt');
+
+		if (
+			!fs.existsSync(privateKeyPath) ||
+			!fs.existsSync(certificatePath) ||
+			!fs.existsSync(certificateChainPath)
+		) {
+			logger.warn('SSL certificate files not found. Skipping HTTPS setup.');
+			return null;
+		}
+
+		let privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+		let certificate = fs.readFileSync(certificatePath, 'utf8');
+		let certificateChain = fs.readFileSync(certificateChainPath, 'utf8');
+
+		privateKey = privateKey.trim();
+		certificate = certificate.trim();
+		certificateChain = certificateChain.trim();
+
+		console.log('Private key starts with:', privateKey.substring(0, 50));
+		console.log('Certificate starts with:', certificate.substring(0, 50));
+
+		if (!privateKey.includes('-----BEGIN')) {
+			throw new Error('Private key does not appear to be in PEM format');
+		}
+
+		if (!certificate.includes('-----BEGIN CERTIFICATE-----')) {
+			throw new Error('Certificate does not appear to be in PEM format');
+		}
+
+		const fullCertificate = certificate + '\n' + certificateChain;
+
+		return {
+			key: privateKey,
+			cert: fullCertificate,
+		};
+	} catch (error) {
+		logger.error('Error reading SSL certificates:', error.message);
+		console.error('Full error:', error);
+		throw new Error('Failed to load SSL certificates: ' + error.message);
+	}
+};
+
+createUploadDirs();
+connectDB();
+
+const app = express();
+
+const corsOptions = {
+	origin: ['http://localhost:3000', 'https://localhost:3000'], // Add HTTPS origin
+	credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+
+const backendRoot = path.resolve(__dirname, '..');
+console.log(backendRoot);
+app.use('/uploads', express.static(path.join(backendRoot, 'uploads')));
+
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/token-packs', tokenPackRoutes);
+app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/racks', rackRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
+app.use('/api/v1/waitlist', waitlistRoutes);
+app.use('/api/v1/admin/bookings', adminBookingRoutes);
+app.use('/api/v1/admin/transactions', adminTransactionRoutes);
+app.use('/api/v1/admin/waitlist', adminWaitlistRoutes);
+app.use('/api/v1/upload', uploadRoutes);
+
+app.get('/', (_req, res) => {
+	res.send('Rack Management Portal API is running');
+});
+
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 5000;
+const HTTPS_PORT = process.env.HTTPS_PORT || 5443;
+
+const useSSL = process.env.USE_SSL === 'true' || process.env.NODE_ENV === 'production';
+
+if (useSSL) {
+	const sslOptions = setupSSL();
+	if (sslOptions) {
+		const httpsServer = https.createServer(sslOptions, app);
+		httpsServer.listen(HTTPS_PORT, () => {
+			logger.info(
+				`HTTPS Server running in ${process.env.NODE_ENV} mode on port ${HTTPS_PORT}`
+			);
+		});
+	} else {
+		app.listen(PORT, () => {
+			logger.warn(
+				`HTTPS setup failed, falling back to HTTP server on port ${PORT}`
+			);
+		});
+	}
+} else {
+	app.listen(PORT, () => {
+		logger.info(
+			`HTTP Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
+		);
+	});
+}
