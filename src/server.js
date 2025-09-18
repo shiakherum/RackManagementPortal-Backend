@@ -98,12 +98,49 @@ connectDB();
 
 const app = express();
 
-const corsOptions = {
-	origin: ['http://localhost:3000', 'https://localhost:3000'], // Add HTTPS origin
-	credentials: true,
-};
+// Custom CORS middleware for better debugging and control
+const allowedOrigins = new Set([
+	'https://acirackrentals.com',
+	'https://acirackrentals.com:3000',
+    'https://acirackrentals.com:5443',
+	'http://localhost:3000',
+	'https://localhost:3000',
+]);
 
-app.use(cors(corsOptions));
+app.use((req, res, next) => {
+	const origin = req.headers.origin;
+
+	// Always log to verify preflights hit Node
+	console.log(`[CORS] ${req.method} ${req.url} | Origin: ${origin}`);
+
+	if (origin && allowedOrigins.has(origin)) {
+		res.setHeader('Access-Control-Allow-Origin', origin);
+		res.setHeader('Vary', 'Origin'); // important for proxies/caches
+		res.setHeader('Access-Control-Allow-Credentials', 'true');
+	}
+
+	// Methods
+	res.setHeader(
+		'Access-Control-Allow-Methods',
+		'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+	);
+
+	// Mirror whatever headers browser plans to send (safer than a fixed list)
+	const reqHeaders = req.headers['access-control-request-headers'];
+	res.setHeader(
+		'Access-Control-Allow-Headers',
+		reqHeaders || 'Content-Type, Authorization, X-Requested-With'
+	);
+
+	// Optional: cache preflight for 10 minutes
+	res.setHeader('Access-Control-Max-Age', '600');
+
+	if (req.method === 'OPTIONS') {
+		return res.status(204).end(); // no content
+	}
+
+	next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -133,7 +170,8 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 const HTTPS_PORT = process.env.HTTPS_PORT || 5443;
 
-const useSSL = process.env.USE_SSL === 'true' || process.env.NODE_ENV === 'production';
+const useSSL =
+	process.env.USE_SSL === 'true' || process.env.NODE_ENV === 'production';
 
 if (useSSL) {
 	const sslOptions = setupSSL();
