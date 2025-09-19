@@ -63,7 +63,44 @@ const getRackById = async (id) => {
 };
 
 const updateRack = async (id, updateData) => {
-	const rack = await rackRepo.updateById(id, updateData);
+	const {
+		name,
+		description,
+		location,
+		status,
+		powerStatus,
+		deviceId,
+		availableAciVersions,
+		preConfigOptions,
+		topologyDiagram,
+		topologyHtmlMap,
+		titleFeature,
+		specifications,
+		featuresList,
+		ctaFinalLine,
+		tokenCostPerHour,
+	} = updateData;
+
+	// Build the update object
+	const updateObject = {};
+	if (name !== undefined) updateObject.name = name;
+	if (description !== undefined) updateObject.description = description;
+	if (location !== undefined) updateObject.location = location;
+	if (status !== undefined) updateObject.status = status;
+	if (powerStatus !== undefined) updateObject.powerStatus = powerStatus;
+	if (deviceId !== undefined) updateObject.deviceId = deviceId;
+	if (availableAciVersions !== undefined)
+		updateObject.availableAciVersions = availableAciVersions;
+	if (preConfigOptions !== undefined) updateObject.preConfigOptions = preConfigOptions;
+	if (topologyDiagram !== undefined) updateObject.topologyDiagram = topologyDiagram;
+	if (topologyHtmlMap !== undefined) updateObject.topologyHtmlMap = topologyHtmlMap;
+	if (titleFeature !== undefined) updateObject.titleFeature = titleFeature;
+	if (specifications !== undefined) updateObject.specifications = specifications;
+	if (featuresList !== undefined) updateObject.featuresList = featuresList;
+	if (ctaFinalLine !== undefined) updateObject.ctaFinalLine = ctaFinalLine;
+	if (tokenCostPerHour !== undefined) updateObject.tokenCostPerHour = tokenCostPerHour;
+
+	const rack = await rackRepo.updateById(id, { $set: updateObject });
 	if (!rack) {
 		throw new ApiError(404, 'Rack not found.');
 	}

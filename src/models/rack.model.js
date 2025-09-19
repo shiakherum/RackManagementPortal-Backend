@@ -51,6 +51,28 @@ const rackSchema = new mongoose.Schema(
 			type: String,
 			default: '',
 		},
+		titleFeature: {
+			type: String,
+			trim: true,
+		},
+		specifications: [
+			{
+				specName: String,
+				specValue: String,
+			},
+		],
+		featuresList: {
+			type: [String],
+			default: [],
+		},
+		ctaFinalLine: {
+			type: String,
+			trim: true,
+		},
+		tokenCostPerHour: {
+			type: Number,
+			default: 0,
+		},
 	},
 	{
 		collection: 'racks',

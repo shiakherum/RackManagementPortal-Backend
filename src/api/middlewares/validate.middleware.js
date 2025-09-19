@@ -29,3 +29,60 @@ export const validate = (req, _res, next) => {
 
 	throw new ApiError(400, extractedError);
 };
+
+/**
+ * Middleware factory to validate requests using Joi schemas.
+ *
+ * @function validateJoi
+ * @param {Object} schema - Joi validation schema object with optional body, params, query keys.
+ * @returns {Function} Express middleware function.
+ *
+ * @throws {ApiError} 400 Bad Request if validation errors are present.
+ *
+ * @example
+ * router.post('/racks', validateJoi(createRackSchema), controller.createRack);
+ */
+export const validateJoi = (schema) => {
+	return (req, res, next) => {
+		const validationOptions = {
+			abortEarly: false,
+			allowUnknown: false,
+			stripUnknown: false,
+		};
+
+		const { error } = schema.body
+			? schema.body.validate(req.body, validationOptions)
+			: { error: null };
+
+		if (error) {
+			const errorMessage = error.details
+				.map((detail) => detail.message)
+				.join('. ');
+			throw new ApiError(400, errorMessage);
+		}
+
+		// Validate params if schema includes them
+		if (schema.params) {
+			const { error: paramsError } = schema.params.validate(req.params, validationOptions);
+			if (paramsError) {
+				const errorMessage = paramsError.details
+					.map((detail) => detail.message)
+					.join('. ');
+				throw new ApiError(400, errorMessage);
+			}
+		}
+
+		// Validate query if schema includes them
+		if (schema.query) {
+			const { error: queryError } = schema.query.validate(req.query, validationOptions);
+			if (queryError) {
+				const errorMessage = queryError.details
+					.map((detail) => detail.message)
+					.join('. ');
+				throw new ApiError(400, errorMessage);
+			}
+		}
+
+		next();
+	};
+};
