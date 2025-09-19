@@ -5,6 +5,15 @@ const createRack = async (req, res) => {
 	res.status(201).json({ success: true, data: rack });
 };
 
+const getPublicRacks = async (req, res) => {
+	const result = await rackService.getPublicRacks(req.query);
+	res.status(200).json({
+		success: true,
+		data: result.racks,
+		pagination: result.pagination,
+	});
+};
+
 const getAllRacks = async (req, res) => {
 	const result = await rackService.getAllRacks(req.query);
 	res.status(200).json({
@@ -56,6 +65,7 @@ export {
 	deleteMultipleRacks,
 	deleteRack,
 	getAllRacks,
+	getPublicRacks,
 	getRackById,
 	updateRack,
 };

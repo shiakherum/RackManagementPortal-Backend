@@ -54,6 +54,47 @@ const getAllRacks = async (queryParams = {}) => {
 	};
 };
 
+const getPublicRacks = async (queryParams = {}) => {
+	const {
+		page = 1,
+		limit = 50,
+		sort = 'name',
+	} = queryParams;
+
+	// Only show available racks for public view
+	const query = { status: 'available' };
+
+	const pageNum = parseInt(page);
+	const limitNum = parseInt(limit);
+	const skip = (pageNum - 1) * limitNum;
+
+	let sortObject = {};
+	if (sort.startsWith('-')) {
+		sortObject[sort.substring(1)] = -1;
+	} else {
+		sortObject[sort] = 1;
+	}
+
+	const [racks, total] = await Promise.all([
+		Rack.find(query)
+			.select('name description titleFeature tokenCostPerHour specifications featuresList ctaFinalLine topologyDiagram')
+			.sort(sortObject)
+			.skip(skip)
+			.limit(limitNum),
+		Rack.countDocuments(query),
+	]);
+
+	return {
+		racks,
+		pagination: {
+			page: pageNum,
+			limit: limitNum,
+			total,
+			totalPages: Math.ceil(total / limitNum),
+		},
+	};
+};
+
 const getRackById = async (id) => {
 	const rack = await rackRepo.findById(id);
 	if (!rack) {
@@ -140,6 +181,7 @@ export {
 	deleteMultipleRacks,
 	deleteRack,
 	getAllRacks,
+	getPublicRacks,
 	getRackById,
 	updateRack,
 };
