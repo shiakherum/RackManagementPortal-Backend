@@ -77,7 +77,7 @@ const getPublicRacks = async (queryParams = {}) => {
 
 	const [racks, total] = await Promise.all([
 		Rack.find(query)
-			.select('name description titleFeature tokenCostPerHour specifications featuresList ctaFinalLine topologyDiagram')
+			.select('name description titleFeature tokenCostPerHour specifications featuresList ctaFinalLine topologyDiagram deviceId')
 			.sort(sortObject)
 			.skip(skip)
 			.limit(limitNum),
@@ -93,6 +93,16 @@ const getPublicRacks = async (queryParams = {}) => {
 			totalPages: Math.ceil(total / limitNum),
 		},
 	};
+};
+
+const getPublicRackByDeviceId = async (deviceId) => {
+	const rack = await Rack.findOne({ deviceId, status: 'available' })
+		.select('name description titleFeature tokenCostPerHour specifications featuresList ctaFinalLine topologyDiagram deviceId availableAciVersions preConfigOptions');
+
+	if (!rack) {
+		throw new ApiError(404, 'Rack not found or not available.');
+	}
+	return rack;
 };
 
 const getRackById = async (id) => {
@@ -182,6 +192,7 @@ export {
 	deleteRack,
 	getAllRacks,
 	getPublicRacks,
+	getPublicRackByDeviceId,
 	getRackById,
 	updateRack,
 };

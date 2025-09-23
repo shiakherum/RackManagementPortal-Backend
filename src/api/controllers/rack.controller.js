@@ -14,6 +14,11 @@ const getPublicRacks = async (req, res) => {
 	});
 };
 
+const getPublicRackByDeviceId = async (req, res) => {
+	const rack = await rackService.getPublicRackByDeviceId(req.params.deviceId);
+	res.status(200).json({ success: true, data: rack });
+};
+
 const getAllRacks = async (req, res) => {
 	const result = await rackService.getAllRacks(req.query);
 	res.status(200).json({
@@ -66,6 +71,7 @@ export {
 	deleteRack,
 	getAllRacks,
 	getPublicRacks,
+	getPublicRackByDeviceId,
 	getRackById,
 	updateRack,
 };
