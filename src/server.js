@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 
 import connectDB from '#config/db.config.js';
 import logger from '#config/logger.config.js';
+import passport from '#config/passport.config.js';
 import errorHandler from '#middlewares/error.middleware.js';
 import adminBookingRoutes from '#routes/admin.booking.route.js';
 import adminRoutes from '#routes/admin.route.js';
@@ -18,6 +19,7 @@ import orderRoutes from '#routes/order.route.js';
 import publicRackRoutes from '#routes/public.rack.route.js';
 import rackRoutes from '#routes/rack.route.js';
 import tokenPackRoutes from '#routes/token-pack.route.js';
+import transactionRoutes from '#routes/transaction.route.js';
 import uploadRoutes from '#routes/upload.route.js';
 import waitlistRoutes from '#routes/wait-list.route.js';
 import adminTransactionRoutes from './api/routes/admin.transaction.route.js';
@@ -102,10 +104,14 @@ const app = express();
 // Custom CORS middleware for better debugging and control
 const allowedOrigins = new Set([
 	'https://acirackrentals.com',
-	'https://acirackrentals.com:3000',
-    'https://acirackrentals.com:5443',
-	'http://localhost:3000',
-	'https://localhost:3000',
+	'https://www.acirackrentals.com',
+	// Development origins (remove in production)
+	...(process.env.NODE_ENV !== 'production' ? [
+		'http://localhost:3000',
+		'https://localhost:3000',
+		'https://acirackrentals.com:3000',
+		'https://acirackrentals.com:5443'
+	] : [])
 ]);
 
 app.use((req, res, next) => {
@@ -145,6 +151,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(passport.initialize());
 
 const backendRoot = path.resolve(__dirname, '..');
 console.log(backendRoot);
@@ -154,6 +161,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/token-packs', tokenPackRoutes);
 app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/transactions', transactionRoutes);
 app.use('/api/v1/public/racks', publicRackRoutes);
 app.use('/api/v1/racks', rackRoutes);
 app.use('/api/v1/bookings', bookingRoutes);

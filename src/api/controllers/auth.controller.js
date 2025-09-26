@@ -6,6 +6,7 @@ import {
 } from '#services/auth.service.js';
 import { ApiError } from '#utils/api-error.utils.js';
 import jwt from 'jsonwebtoken';
+import passport from '#config/passport.config.js';
 
 const registerUser = async (req, res) => {
 	const { user, accessToken, refreshToken } = await registerUserService(
@@ -108,4 +109,40 @@ const verifyEmail = async (req, res) => {
 	res.status(200).json({ success: true, data: result });
 };
 
-export { loginUser, logoutUser, refreshAccessToken, registerUser, verifyEmail };
+const googleAuth = (req, res, next) => {
+	passport.authenticate('google', {
+		scope: ['profile', 'email'],
+	})(req, res, next);
+};
+
+const googleCallback = (req, res, next) => {
+	passport.authenticate('google', { session: false }, async (err, user) => {
+		if (err) {
+			return res.redirect(`${process.env.FRONTEND_URL}/auth/error?error=oauth_error`);
+		}
+
+		if (!user) {
+			return res.redirect(`${process.env.FRONTEND_URL}/auth/error?error=oauth_failed`);
+		}
+
+		try {
+			const accessToken = user.generateAccessToken();
+			const refreshToken = user.generateRefreshToken();
+
+			const cookieOptions = {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				sameSite: 'strict',
+				maxAge: 30 * 24 * 60 * 60 * 1000,
+			};
+
+			res.cookie('refreshToken', refreshToken, cookieOptions);
+
+			return res.redirect(`${process.env.FRONTEND_URL}/auth/success?token=${accessToken}`);
+		} catch (error) {
+			return res.redirect(`${process.env.FRONTEND_URL}/auth/error?error=token_generation_failed`);
+		}
+	})(req, res, next);
+};
+
+export { loginUser, logoutUser, refreshAccessToken, registerUser, verifyEmail, googleAuth, googleCallback };

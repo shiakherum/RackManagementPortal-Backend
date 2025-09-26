@@ -35,4 +35,10 @@ const findById = async (id) => {
 		.populate('tokenPack', 'name');
 };
 
-export { create, findAll, findById, findByRazorpayOrderId, updateById };
+const findByUserId = async (userId) => {
+	return Transaction.find({ user: userId })
+		.populate('tokenPack', 'name tokensGranted')
+		.sort({ createdAt: -1 });
+};
+
+export { create, findAll, findById, findByRazorpayOrderId, findByUserId, updateById };
