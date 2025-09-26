@@ -38,11 +38,17 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
 						return done(null, existingUser);
 					}
 
+					// Generate a username that fits the 20-character limit
+					const emailPrefix = profile.emails[0].value.split('@')[0];
+					const shortPrefix = emailPrefix.length > 12 ? emailPrefix.substring(0, 12) : emailPrefix;
+					const randomSuffix = Math.random().toString(36).substring(2, 8); // 6 chars max
+					const username = shortPrefix + '_' + randomSuffix; // Max 12 + 1 + 6 = 19 chars
+
 					const newUser = await User.create({
 						googleId: profile.id,
 						firstName: profile.name.givenName || '',
 						lastName: profile.name.familyName || '',
-						username: profile.emails[0].value.split('@')[0] + '_' + Date.now(),
+						username: username,
 						email: profile.emails[0].value,
 						password: Math.random().toString(36).substring(2, 15),
 						isEmailVerified: true,

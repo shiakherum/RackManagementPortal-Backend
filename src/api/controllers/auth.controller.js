@@ -118,6 +118,7 @@ const googleAuth = (req, res, next) => {
 const googleCallback = (req, res, next) => {
 	passport.authenticate('google', { session: false }, async (err, user) => {
 		if (err) {
+			console.error('Google OAuth Error:', err);
 			return res.redirect(`${process.env.FRONTEND_URL}/auth/error?error=oauth_error`);
 		}
 
