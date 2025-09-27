@@ -31,10 +31,12 @@ const createTokenPurchaseOrder = async (userId, tokenPackId) => {
 	});
 
 	return {
+		orderId: razorpayOrder.id,
 		razorpayOrderId: razorpayOrder.id,
 		amount: razorpayOrder.amount,
 		currency: razorpayOrder.currency,
 		transactionId: transaction._id,
+		key: process.env.RAZORPAY_KEY_ID,
 	};
 };
 

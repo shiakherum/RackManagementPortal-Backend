@@ -1,19 +1,34 @@
 import * as orderService from '#services/order.service.js';
 
 const createOrder = async (req, res) => {
-	const { tokenPackId } = req.body;
-	const userId = req.user.id;
+	try {
+		console.log('Order creation request:', { body: req.body, userId: req.user?.id });
 
-	const orderDetails = await orderService.createTokenPurchaseOrder(
-		userId,
-		tokenPackId
-	);
+		const { tokenPackId } = req.body;
+		const userId = req.user.id;
 
-	res.status(201).json({
-		success: true,
-		message: 'Order created successfully. Please proceed with payment.',
-		data: orderDetails,
-	});
+		if (!tokenPackId) {
+			throw new Error('tokenPackId is required');
+		}
+
+		if (!userId) {
+			throw new Error('User ID not found in request');
+		}
+
+		const orderDetails = await orderService.createTokenPurchaseOrder(
+			userId,
+			tokenPackId
+		);
+
+		res.status(201).json({
+			success: true,
+			message: 'Order created successfully. Please proceed with payment.',
+			data: orderDetails,
+		});
+	} catch (error) {
+		console.error('Order creation error:', error);
+		throw error;
+	}
 };
 
 const verifyPaymentWebhook = async (req, res) => {
