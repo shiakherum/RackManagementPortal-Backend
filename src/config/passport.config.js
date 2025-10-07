@@ -46,8 +46,8 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
 
 					const newUser = await User.create({
 						googleId: profile.id,
-						firstName: profile.name.givenName || '',
-						lastName: profile.name.familyName || '',
+						firstName: profile.name.givenName || 'User',
+						lastName: profile.name.familyName || 'Unknown',
 						username: username,
 						email: profile.emails[0].value,
 						password: Math.random().toString(36).substring(2, 15),
