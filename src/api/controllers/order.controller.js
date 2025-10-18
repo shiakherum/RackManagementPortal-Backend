@@ -31,6 +31,34 @@ const createOrder = async (req, res) => {
 	}
 };
 
+const verifyPayment = async (req, res) => {
+	try {
+		const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+
+		if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+			return res.status(400).json({
+				success: false,
+				message: 'Missing required payment verification parameters.',
+			});
+		}
+
+		const transaction = await orderService.verifyPaymentAndUpdateTokens(
+			razorpayOrderId,
+			razorpayPaymentId,
+			razorpaySignature
+		);
+
+		res.status(200).json({
+			success: true,
+			message: 'Payment verified and tokens added successfully.',
+			data: transaction,
+		});
+	} catch (error) {
+		console.error('Payment verification error:', error);
+		throw error;
+	}
+};
+
 const verifyPaymentWebhook = async (req, res) => {
 	const signature = req.headers['x-razorpay-signature'];
 	const { order_id, payment_id } = req.body.payload.payment.entity;
@@ -46,4 +74,4 @@ const verifyPaymentWebhook = async (req, res) => {
 		.json({ success: true, message: 'Webhook processed successfully.' });
 };
 
-export { createOrder, verifyPaymentWebhook };
+export { createOrder, verifyPayment, verifyPaymentWebhook };
