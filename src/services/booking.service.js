@@ -6,7 +6,7 @@ import { notifyUser } from '#services/notification.service.js';
 import { ApiError } from '#utils/api-error.utils.js';
 import mongoose from 'mongoose';
 
-const TOKENS_PER_HOUR = 100; // TODO: Example cost, can be made dynamic later
+const TOKENS_PER_HOUR = 100; // Fallback if rack doesn't have tokenCostPerHour
 const CANCELLATION_PENALTY_WINDOW_HOURS = 4;
 
 const createBooking = async (userId, bookingDetails) => {
@@ -38,56 +38,38 @@ const createBooking = async (userId, bookingDetails) => {
 
 	const durationInHours =
 		(new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60);
-	const totalTokenCost = Math.ceil(durationInHours * TOKENS_PER_HOUR);
+	const tokensPerHour = rack.tokenCostPerHour || TOKENS_PER_HOUR;
+	const totalTokenCost = Math.ceil(durationInHours * tokensPerHour);
 
 	const user = await userRepo.findById(userId);
 	if (!user || user.tokens < totalTokenCost) {
 		throw new ApiError(402, 'Insufficient token balance to make this booking.');
 	}
 
-	const session = await mongoose.startSession();
-	let newBooking;
+	// Deduct tokens from user
+	await User.findByIdAndUpdate(
+		userId,
+		{ $inc: { tokens: -totalTokenCost } }
+	);
 
-	try {
-		session.startTransaction();
-
-		await User.findByIdAndUpdate(
-			userId,
-			{ $inc: { tokens: -totalTokenCost } },
-			{ session }
-		);
-
-		newBooking = await bookingRepo.create(
-			{
-				user: userId,
-				rack: rackId,
-				startTime,
-				endTime,
-				tokenCost: totalTokenCost,
-				selectedAciVersion,
-				selectedPreConfigs,
-				status: 'confirmed',
-			},
-			session
-		);
-
-		await session.commitTransaction();
-	} catch (error) {
-		await session.abortTransaction();
-		throw new ApiError(
-			500,
-			'Failed to create booking. Please try again.',
-			false,
-			error.stack
-		);
-	} finally {
-		session.endSession();
-	}
+	// Create booking
+	const newBooking = await bookingRepo.create({
+		user: userId,
+		rack: rackId,
+		startTime,
+		endTime,
+		tokenCost: totalTokenCost,
+		selectedAciVersion,
+		selectedPreConfigs,
+		status: 'confirmed',
+	});
 
 	return newBooking;
 };
 
 const getBookingsForUser = async (userId, options) => {
+	// Update expired bookings before fetching
+	await bookingRepo.updateExpiredBookings();
 	return bookingRepo.findByUser(userId, options);
 };
 

@@ -58,6 +58,19 @@ const bookingSchema = new mongoose.Schema(
  */
 bookingSchema.index({ rack: 1, startTime: 1, endTime: 1 }, { unique: true });
 
+// Virtual field to check if booking is expired/completed
+bookingSchema.virtual('isExpired').get(function() {
+	return this.endTime < new Date() && this.status === 'confirmed';
+});
+
+// Auto-mark bookings as completed when they expire
+bookingSchema.pre('save', function(next) {
+	if (this.endTime < new Date() && this.status === 'confirmed') {
+		this.status = 'completed';
+	}
+	next();
+});
+
 const Booking = mongoose.model('Booking', bookingSchema);
 
 export default Booking;

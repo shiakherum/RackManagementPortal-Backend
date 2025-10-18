@@ -1,5 +1,19 @@
 import Booking from '#models/booking.model.js';
 
+// Update all confirmed bookings that have ended to completed status
+export const updateExpiredBookings = async () => {
+	const now = new Date();
+	await Booking.updateMany(
+		{
+			status: 'confirmed',
+			endTime: { $lt: now }
+		},
+		{
+			$set: { status: 'completed' }
+		}
+	);
+};
+
 export const create = async (bookingData, session = null) => {
 	if (session) {
 		const newBooking = await Booking.create([bookingData], { session });
