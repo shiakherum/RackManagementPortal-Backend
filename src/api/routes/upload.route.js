@@ -15,15 +15,29 @@ router.post('/topology-diagram', (req, res, next) => {
 	console.log('Authorization:', req.headers['authorization']);
 	console.log('Body (before multer):', req.body);
 	next();
-}, upload.single('image'), (req, res, next) => {
-	try {
+}, (req, res, next) => {
+	const multerUpload = upload.single('image');
+	multerUpload(req, res, (err) => {
 		console.log('=== After multer middleware ===');
+		console.log('Multer error:', err);
 		console.log('Body (after multer):', req.body);
 		console.log('File:', req.file);
 		console.log('Files:', req.files);
 
+		if (err) {
+			console.log('ERROR: Multer error occurred:', err);
+			return res.status(400).json({
+				success: false,
+				message: err.message || 'File upload error',
+			});
+		}
+
+		next();
+	});
+}, (req, res, next) => {
+	try {
 		if (!req.file) {
-			console.log('ERROR: No file in request');
+			console.log('ERROR: No file in request after multer');
 			return res.status(400).json({
 				success: false,
 				message: 'No file uploaded',
