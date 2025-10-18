@@ -8,9 +8,22 @@ const router = Router();
 router.use(protect, authorize('Admin'));
 
 // Upload topology diagram endpoint
-router.post('/topology-diagram', upload.single('image'), (req, res, next) => {
+router.post('/topology-diagram', (req, res, next) => {
+	console.log('=== Upload endpoint hit ===');
+	console.log('All Headers:', req.headers);
+	console.log('Content-Type:', req.headers['content-type']);
+	console.log('Authorization:', req.headers['authorization']);
+	console.log('Body (before multer):', req.body);
+	next();
+}, upload.single('image'), (req, res, next) => {
 	try {
+		console.log('=== After multer middleware ===');
+		console.log('Body (after multer):', req.body);
+		console.log('File:', req.file);
+		console.log('Files:', req.files);
+
 		if (!req.file) {
+			console.log('ERROR: No file in request');
 			return res.status(400).json({
 				success: false,
 				message: 'No file uploaded',

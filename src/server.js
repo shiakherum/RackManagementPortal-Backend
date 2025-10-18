@@ -148,8 +148,7 @@ app.use((req, res, next) => {
 
 	next();
 });
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
 app.use(cookieParser());
 app.use(passport.initialize());
 
@@ -157,6 +156,14 @@ const backendRoot = path.resolve(__dirname, '..');
 console.log(backendRoot);
 app.use('/uploads', express.static(path.join(backendRoot, 'uploads')));
 
+// IMPORTANT: Upload routes must come BEFORE body parsers to handle multipart data
+app.use('/api/v1/upload', uploadRoutes);
+
+// Body parsers - these will NOT run for upload routes
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
+
+// Other routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/token-packs', tokenPackRoutes);
@@ -169,7 +176,6 @@ app.use('/api/v1/waitlist', waitlistRoutes);
 app.use('/api/v1/admin/bookings', adminBookingRoutes);
 app.use('/api/v1/admin/transactions', adminTransactionRoutes);
 app.use('/api/v1/admin/waitlist', adminWaitlistRoutes);
-app.use('/api/v1/upload', uploadRoutes);
 
 app.get('/', (_req, res) => {
 	res.send('Rack Management Portal API is running');

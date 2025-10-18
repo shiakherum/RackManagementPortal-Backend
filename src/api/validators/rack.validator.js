@@ -10,8 +10,8 @@ const createRack = {
 		deviceId: Joi.string().required(),
 		availableAciVersions: Joi.array().items(Joi.string()),
 		preConfigOptions: Joi.array().items(Joi.string()),
-		topologyDiagram: Joi.string(),
-		topologyHtmlMap: Joi.string(),
+		topologyDiagram: Joi.string().allow(''),
+		topologyHtmlMap: Joi.string().allow(''),
 		titleFeature: Joi.string(),
 		specifications: Joi.array().items(
 			Joi.object({
@@ -39,8 +39,8 @@ const updateRack = {
 			deviceId: Joi.string(),
 			availableAciVersions: Joi.array().items(Joi.string()),
 			preConfigOptions: Joi.array().items(Joi.string()),
-			topologyDiagram: Joi.string(),
-			topologyHtmlMap: Joi.string(),
+			topologyDiagram: Joi.string().allow(''),
+			topologyHtmlMap: Joi.string().allow(''),
 			titleFeature: Joi.string(),
 			specifications: Joi.array().items(
 				Joi.object({
