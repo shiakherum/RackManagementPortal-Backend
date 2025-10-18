@@ -105,28 +105,19 @@ const cancelBooking = async (userId, bookingId) => {
 		refundAmount = Math.floor(booking.tokenCost * 0.5);
 	}
 
-	// Use a transaction to ensure atomicity
-	const session = await mongoose.startSession();
+	// Refund tokens and cancel booking (no transaction for standalone MongoDB)
 	try {
-		session.startTransaction();
-
 		await User.findByIdAndUpdate(
 			userId,
-			{ $inc: { tokens: refundAmount } },
-			{ session }
+			{ $inc: { tokens: refundAmount } }
 		);
 
 		booking.status = 'cancelled';
-		await booking.save({ session });
+		await booking.save();
 
 		// TODO: Trigger waitlist notification logic here in the future
-
-		await session.commitTransaction();
 	} catch (error) {
-		await session.abortTransaction();
 		throw new ApiError(500, 'Failed to cancel booking. Please try again.');
-	} finally {
-		session.endSession();
 	}
 
 	try {
