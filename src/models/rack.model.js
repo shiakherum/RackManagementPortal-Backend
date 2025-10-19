@@ -73,6 +73,21 @@ const rackSchema = new mongoose.Schema(
 			type: Number,
 			default: 0,
 		},
+		vncConnection: {
+			host: {
+				type: String,
+				trim: true,
+				// e.g., '122.179.154.82'
+			},
+			port: {
+				type: Number,
+				// e.g., 2000
+			},
+			password: {
+				type: String,
+				// VNC password
+			},
+		},
 	},
 	{
 		collection: 'racks',

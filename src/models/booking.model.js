@@ -43,6 +43,27 @@ const bookingSchema = new mongoose.Schema(
 			// For storing logs from the Python provisioning script
 			type: String,
 		},
+		vncAccess: {
+			novncUrl: {
+				type: String,
+				// The NoVNC URL for this booking
+			},
+			novncPort: {
+				type: Number,
+				// The port websockify is running on
+			},
+			novncPid: {
+				type: Number,
+				// Process ID of the websockify process
+			},
+			isActive: {
+				type: Boolean,
+				default: false,
+			},
+			startedAt: {
+				type: Date,
+			},
+		},
 	},
 	{
 		collection: 'bookings',
