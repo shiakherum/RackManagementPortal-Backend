@@ -22,6 +22,11 @@ const createRack = {
 		featuresList: Joi.array().items(Joi.string()),
 		ctaFinalLine: Joi.string(),
 		tokenCostPerHour: Joi.number(),
+		vncConnection: Joi.object().keys({
+			host: Joi.string().allow(''),
+			port: Joi.number(),
+			password: Joi.string().allow(''),
+		}),
 	}),
 };
 
@@ -51,6 +56,11 @@ const updateRack = {
 			featuresList: Joi.array().items(Joi.string()),
 			ctaFinalLine: Joi.string(),
 			tokenCostPerHour: Joi.number(),
+			vncConnection: Joi.object().keys({
+				host: Joi.string().allow(''),
+				port: Joi.number(),
+				password: Joi.string().allow(''),
+			}),
 		})
 		.min(1),
 };

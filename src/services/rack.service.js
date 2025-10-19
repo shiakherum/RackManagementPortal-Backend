@@ -130,6 +130,7 @@ const updateRack = async (id, updateData) => {
 		featuresList,
 		ctaFinalLine,
 		tokenCostPerHour,
+		vncConnection,
 	} = updateData;
 
 	// Build the update object
@@ -150,6 +151,7 @@ const updateRack = async (id, updateData) => {
 	if (featuresList !== undefined) updateObject.featuresList = featuresList;
 	if (ctaFinalLine !== undefined) updateObject.ctaFinalLine = ctaFinalLine;
 	if (tokenCostPerHour !== undefined) updateObject.tokenCostPerHour = tokenCostPerHour;
+	if (vncConnection !== undefined) updateObject.vncConnection = vncConnection;
 
 	const rack = await rackRepo.updateById(id, { $set: updateObject });
 	if (!rack) {
