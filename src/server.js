@@ -25,6 +25,7 @@ import uploadRoutes from '#routes/upload.route.js';
 import waitlistRoutes from '#routes/wait-list.route.js';
 import adminTransactionRoutes from './api/routes/admin.transaction.route.js';
 import adminWaitlistRoutes from './api/routes/admin.wait-list.route.js';
+import { startCleanupScheduler } from './services/rack-access.service.js';
 
 dotenv.config();
 
@@ -99,6 +100,9 @@ const setupSSL = () => {
 
 createUploadDirs();
 connectDB();
+
+// Start VNC connection cleanup scheduler
+startCleanupScheduler();
 
 const app = express();
 

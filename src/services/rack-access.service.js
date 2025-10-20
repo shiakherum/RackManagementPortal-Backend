@@ -8,8 +8,9 @@ import { ApiError } from '#utils/api-error.utils.js';
 const execPromise = util.promisify(exec);
 
 // Port range for NoVNC connections
-const NOVNC_PORT_START = 6080;
-const NOVNC_PORT_END = 6999;
+// These ports should be NAT'd/forwarded for external access
+const NOVNC_PORT_START = parseInt(process.env.NOVNC_PORT_START) || 6080;
+const NOVNC_PORT_END = parseInt(process.env.NOVNC_PORT_END) || 6999;
 const usedPorts = new Set();
 
 /**
@@ -285,4 +286,79 @@ const getBookingAccessDetails = async (bookingId, userId) => {
 	return booking;
 };
 
-export { startRackAccess, stopRackAccess, getBookingAccessDetails };
+/**
+ * Cleanup expired VNC connections
+ * This should be called periodically (e.g., every minute)
+ */
+const cleanupExpiredConnections = async () => {
+	try {
+		const now = new Date();
+
+		// Find all bookings with active VNC access that have expired
+		const expiredBookings = await Booking.find({
+			endTime: { $lt: now },
+			'vncAccess.isActive': true,
+		});
+
+		console.log(`Found ${expiredBookings.length} expired bookings with active VNC connections`);
+
+		for (const booking of expiredBookings) {
+			try {
+				console.log(`Cleaning up expired booking: ${booking._id}`);
+
+				// Kill the websockify process
+				if (booking.vncAccess.novncPid) {
+					try {
+						process.kill(booking.vncAccess.novncPid, 'SIGTERM');
+						console.log(`Killed websockify process ${booking.vncAccess.novncPid}`);
+					} catch (killError) {
+						console.error(`Failed to kill process ${booking.vncAccess.novncPid}:`, killError.message);
+					}
+				}
+
+				// Additional cleanup using port-based killing
+				if (booking.vncAccess.novncPort) {
+					try {
+						await execPromise(`pkill -f "websockify.*:${booking.vncAccess.novncPort}"`);
+						console.log(`Killed websockify on port ${booking.vncAccess.novncPort}`);
+					} catch (cleanupError) {
+						// Process might already be dead, ignore
+					}
+					releasePort(booking.vncAccess.novncPort);
+				}
+
+				// Clear VNC access details
+				booking.vncAccess = {
+					isActive: false,
+					novncUrl: null,
+					novncPort: null,
+					novncPid: null,
+				};
+				await booking.save();
+
+				console.log(`Successfully cleaned up booking: ${booking._id}`);
+			} catch (error) {
+				console.error(`Error cleaning up booking ${booking._id}:`, error);
+			}
+		}
+	} catch (error) {
+		console.error('Error in cleanupExpiredConnections:', error);
+	}
+};
+
+/**
+ * Start the cleanup interval (run every minute)
+ */
+const startCleanupScheduler = () => {
+	// Run immediately on startup
+	cleanupExpiredConnections();
+
+	// Then run every minute
+	const intervalId = setInterval(cleanupExpiredConnections, 60 * 1000);
+
+	console.log('VNC connection cleanup scheduler started (runs every 60 seconds)');
+
+	return intervalId;
+};
+
+export { startRackAccess, stopRackAccess, getBookingAccessDetails, cleanupExpiredConnections, startCleanupScheduler };
