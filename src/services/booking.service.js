@@ -17,6 +17,10 @@ const createBooking = async (userId, bookingDetails) => {
 	if (!rack || rack.status !== 'available') {
 		throw new ApiError(404, 'Rack not found or is currently unavailable.');
 	}
+
+	// Note: startTime and endTime are ISO 8601 strings from the frontend
+	// JavaScript Date constructor automatically converts to UTC
+	// MongoDB stores all dates in UTC, making this timezone-aware by default
 	if (new Date(startTime) >= new Date(endTime)) {
 		throw new ApiError(400, 'End time must be after start time.');
 	}
