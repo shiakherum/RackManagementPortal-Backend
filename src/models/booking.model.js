@@ -72,12 +72,19 @@ const bookingSchema = new mongoose.Schema(
 );
 
 /**
- * Unique compound index to prevent a single rack from being booked
+ * Partial unique compound index to prevent a single rack from being booked
  * for the same time slot by multiple users.
  *
+ * Only applies to 'confirmed' bookings - cancelled/completed bookings don't block new bookings.
  * NOTE: This does not prevent **overlapping** time ranges — only exact duplicates.
  */
-bookingSchema.index({ rack: 1, startTime: 1, endTime: 1 }, { unique: true });
+bookingSchema.index(
+	{ rack: 1, startTime: 1, endTime: 1 },
+	{
+		unique: true,
+		partialFilterExpression: { status: 'confirmed' }
+	}
+);
 
 // Virtual field to check if booking is expired/completed
 bookingSchema.virtual('isExpired').get(function() {

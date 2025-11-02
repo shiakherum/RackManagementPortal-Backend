@@ -4,6 +4,7 @@ import * as rackRepo from '#repositories/rack.repository.js';
 import * as userRepo from '#repositories/user.repository.js';
 import { notifyUser } from '#services/notification.service.js';
 import { ApiError } from '#utils/api-error.utils.js';
+import logger from '#config/logger.config.js';
 import mongoose from 'mongoose';
 
 const TOKENS_PER_HOUR = 100; // Fallback if rack doesn't have tokenCostPerHour
@@ -124,40 +125,9 @@ const cancelBooking = async (userId, bookingId) => {
 		throw new ApiError(500, 'Failed to cancel booking. Please try again.');
 	}
 
-	try {
-		const waitlistedUsers = await waitlistRepo.findWaitlistedUsersForSlot(
-			booking.rack,
-			booking.startTime,
-			booking.endTime
-		);
-
-		if (waitlistedUsers.length > 0) {
-			logger.info(
-				`Found ${waitlistedUsers.length} user(s) on the waitlist for this slot.`
-			);
-			const notificationMessage = `A slot you were waiting for on Rack ID ${
-				booking.rack
-			} from ${booking.startTime.toLocaleString()} to ${booking.endTime.toLocaleString()} is now available!`;
-
-			const userIdsToNotify = waitlistedUsers.map((w) => w.user);
-
-			await Promise.all(
-				userIdsToNotify.map((id) => notifyUser(id, notificationMessage))
-			);
-
-			await waitlistRepo.updateStatusForUsers(
-				userIdsToNotify,
-				booking.rack,
-				booking.startTime,
-				booking.endTime
-			);
-		}
-	} catch (error) {
-		logger.error(
-			'Failed to process waitlist notifications after cancellation:',
-			error
-		);
-	}
+	// TODO: Implement waitlist functionality
+	// Waitlist feature is not yet implemented
+	// Once implemented, notify users on the waitlist when a slot becomes available
 
 	return {
 		message: 'Booking cancelled successfully.',
