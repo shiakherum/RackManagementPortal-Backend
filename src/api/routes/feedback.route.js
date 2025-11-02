@@ -8,9 +8,9 @@ const router = express.Router();
 router.post('/', protect, feedbackController.submitFeedback);
 router.get('/booking/:bookingId', protect, feedbackController.getUserFeedback);
 
-// Admin routes (protected)
-router.get('/', protect, authorize('Admin'), feedbackController.getAllFeedbacks);
-router.get('/stats', protect, authorize('Admin'), feedbackController.getFeedbackStats);
-router.get('/:feedbackId', protect, authorize('Admin'), feedbackController.getFeedbackById);
+// Admin routes (protected) - must be specific routes before generic ones
+router.get('/admin/stats', protect, authorize('Admin'), feedbackController.getFeedbackStats);
+router.get('/admin/:feedbackId', protect, authorize('Admin'), feedbackController.getFeedbackById);
+router.get('/admin', protect, authorize('Admin'), feedbackController.getAllFeedbacks);
 
 export default router;
