@@ -14,7 +14,7 @@ const createTokenPurchaseOrder = async (userId, tokenPackId) => {
 	}
 
 	const options = {
-		amount: tokenPack.price, // Amount in the smallest currency unit (e.g., paise)
+		amount: tokenPack.price, // Amount in the smallest currency unit (e.g., cents for USD)
 		currency: tokenPack.currency,
 		receipt: `receipt_order_${new Date().getTime()}`,
 	};

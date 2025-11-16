@@ -13,8 +13,8 @@ const transactionSchema = new mongoose.Schema(
 			required: true,
 		},
 		amount: {
-			// Amount in smallest currency unit (e.g., paise for INR)
-			// e.g., 1000 for ₹10.00
+			// Amount in smallest currency unit (e.g., cents for USD)
+			// e.g., 1000 for $10.00
 			type: Number,
 			required: true,
 		},

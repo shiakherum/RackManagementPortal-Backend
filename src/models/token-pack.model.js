@@ -14,14 +14,14 @@ const tokenPackSchema = new mongoose.Schema(
 			required: true, // e.g., 100
 		},
 		price: {
-			// Price in smallest currency unit (e.g., paise for INR)
-			// e.g., 1000 for ₹10.00
+			// Price in smallest currency unit (e.g., cents for USD)
+			// e.g., 1000 for $10.00
 			type: Number,
 			required: true,
 		},
 		currency: {
 			type: String,
-			default: 'INR',
+			default: 'USD',
 		},
 		isActive: {
 			type: Boolean,
