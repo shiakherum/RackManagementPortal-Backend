@@ -69,6 +69,15 @@ const createBooking = async (userId, bookingDetails) => {
 		status: 'confirmed',
 	});
 
+	// Send booking confirmation email
+	try {
+		const { sendBookingConfirmationEmail } = await import('#services/email.service.js');
+		await sendBookingConfirmationEmail(user, newBooking, rack);
+	} catch (emailError) {
+		// Log error but don't fail the booking
+		console.error('Failed to send booking confirmation email:', emailError);
+	}
+
 	return newBooking;
 };
 

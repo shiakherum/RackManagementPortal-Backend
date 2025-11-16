@@ -97,6 +97,15 @@ const verifyEmail = async (token) => {
 	user.emailVerificationExpires = undefined;
 	await user.save();
 
+	// Send welcome email after successful verification
+	try {
+		const { sendWelcomeEmail } = await import('#services/email.service.js');
+		await sendWelcomeEmail(user);
+	} catch (emailError) {
+		// Log error but don't fail the verification
+		console.error('Failed to send welcome email:', emailError);
+	}
+
 	return { message: 'Email verified successfully.' };
 };
 

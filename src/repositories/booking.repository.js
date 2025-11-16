@@ -3,15 +3,27 @@ import Booking from '#models/booking.model.js';
 // Update all confirmed bookings that have ended to completed status
 export const updateExpiredBookings = async () => {
 	const now = new Date();
-	await Booking.updateMany(
-		{
-			status: 'confirmed',
-			endTime: { $lt: now }
-		},
-		{
-			$set: { status: 'completed' }
+
+	// Find all bookings that need to be marked as completed
+	const expiredBookings = await Booking.find({
+		status: 'confirmed',
+		endTime: { $lt: now }
+	}).populate('user rack');
+
+	// Send completion email for each booking and update status
+	for (const booking of expiredBookings) {
+		try {
+			// Send completion email
+			const { sendBookingCompletionEmail } = await import('#services/email.service.js');
+			await sendBookingCompletionEmail(booking.user, booking, booking.rack);
+		} catch (emailError) {
+			console.error(`Failed to send completion email for booking ${booking._id}:`, emailError);
 		}
-	);
+
+		// Update booking status
+		booking.status = 'completed';
+		await booking.save();
+	}
 };
 
 export const create = async (bookingData, session = null) => {

@@ -77,6 +77,18 @@ const verifyPaymentAndUpdateTokens = async (
 	transaction.razorpaySignature = razorpaySignature;
 	await transaction.save();
 
+	// Send token purchase confirmation email
+	try {
+		const user = await userRepo.findById(transaction.user);
+		if (user) {
+			const { sendTokenPurchaseEmail } = await import('#services/email.service.js');
+			await sendTokenPurchaseEmail(user, tokenPack, transaction);
+		}
+	} catch (emailError) {
+		// Log error but don't fail the transaction
+		console.error('Failed to send token purchase email:', emailError);
+	}
+
 	return transaction;
 };
 
